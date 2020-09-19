@@ -1,0 +1,44 @@
+= SPAN GENERATOR
+
+== OVERVIEW
+
+Working with spans generated through applications or building tracing examples might be tedious and evolving.
+The aim of this project is to create those spans which go through different operations in a train of microservices quickly and exporting them to different collectors.
+
+== WHEN IS IT USEFUL?
+
+Working in observability and dealing with spans, which might well be creating collectors for different providers or different standards.
+
+Up to know the way you might consume spans might be pushing files to channel as kafka or via REST to be consumed by the other end, with tracers or well actually monitoring applications and those generating spans.
+
+Having also an exporter which counts the number of generated spans, which might be useful to get expected results.
+
+== HOW TO USE IT?
+
+Defining operations and nesting them, giving those tags which are customised.
+
+[source,java]
+----
+Operation.from(Microservice.builder()
+                        .environment("des")
+                        .tenant("za")
+                        .domain("purchase")
+                        .service("pchs")
+                        .jirakey("b1")
+                        .slot("default")
+                        .platform("Openshift-Meccano Arteixo")
+                        .build(),
+                "get /b1/list",
+                "service B1"
+        );
+----
+
+Adding operation to executor, exposing results through defined exporters.
+
+[source,java]
+----
+  TraceGenerator.create(<exporter list>)
+                .withThreads(2)
+                .addOperation(<operation1>)
+                .addOperation(<operation2>);
+----
