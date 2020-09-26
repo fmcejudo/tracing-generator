@@ -14,21 +14,17 @@ public final class ZipkinContextFactory {
      * It creates an object which will build the spans in a zipkin V2_JSON format
      *
      * @param operation one of the available
-     * @param traceId   which is the correlation id
-     * @param parentId  which might be null or client span id
-     * @param startTime in milliseconds
+     * @param zipkinContext with parent information to build next
      * @return
      */
     public static OperationContext createOperationCtx(final Operation operation,
-                                                      final String traceId,
-                                                      final String parentId,
-                                                      final long startTime) {
+                                                      final ZipkinContext zipkinContext) {
 
         return API.Match(operation.getComponent().getLocalComponent()).of(
                 Case($(Predicates.isNull()), () -> {
                     throw new RuntimeException("local component can not be null");
                 }),
-                Case($("http"), HttpOperationContext.create(operation, traceId, parentId, startTime)),
+                Case($("http"), HttpOperationContext.create(operation, zipkinContext)),
                 Case($(), () -> {
                     throw new RuntimeException("local component does not exist or not implemented yet");
                 }));

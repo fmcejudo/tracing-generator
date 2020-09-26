@@ -4,7 +4,7 @@ import com.github.fmcejudo.tracing.generator.operation.Operation;
 
 public interface OperationContext {
 
-    String getServerParentId();
+    String getSpanServerId();
 
     String addClient(Operation op, long startTime);
 

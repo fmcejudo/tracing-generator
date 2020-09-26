@@ -21,24 +21,23 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     private final String serviceName;
     private final String name;
 
-    HttpOperationContext(final Operation operation, final String traceId, final String parentId, final long startTime) {
-        this.traceId = traceId;
+    HttpOperationContext(final Operation operation, final ZipkinContext zipkinContext) {
+        this.traceId = zipkinContext.getTraceId();
         this.name = operation.getName();
         this.serviceName = operation.getServiceName();
         this.spanContext = SpanContext.builder()
-                .parentId(parentId)
-                .receiveTime(startTime)
+                .parentId(zipkinContext.getParentId())
+                .receiveTime(zipkinContext.getStartTime())
                 .kind(Span.Kind.SERVER)
                 .traceId(traceId)
                 .name(name)
                 .tags(operation.getTags())
                 .serviceName(serviceName)
-                .spanId(generateId(64)).build();
+                .spanId(zipkinContext.getSpanId()).build();
     }
 
-    static HttpOperationContext create(final Operation operation, final String traceId,
-                                       final String parentId, final long startTime) {
-        return new HttpOperationContext(operation, traceId, parentId, startTime);
+    static HttpOperationContext create(final Operation operation, final ZipkinContext zipkinContext) {
+        return new HttpOperationContext(operation, zipkinContext);
     }
 
     @Override
@@ -78,8 +77,8 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     }
 
     @Override
-    public String getServerParentId() {
-        return spanContext.getParentId();
+    public String getSpanServerId() {
+        return spanContext.getSpanId();
     }
 
     @Override

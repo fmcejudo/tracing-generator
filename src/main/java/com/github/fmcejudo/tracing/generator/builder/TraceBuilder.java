@@ -1,5 +1,6 @@
 package com.github.fmcejudo.tracing.generator.builder;
 
+import com.github.fmcejudo.tracing.generator.builder.zipkin.ZipkinContext;
 import com.github.fmcejudo.tracing.generator.builder.zipkin.ZipkinContextFactory;
 import com.github.fmcejudo.tracing.generator.exporter.Exporter;
 import com.github.fmcejudo.tracing.generator.operation.Operation;
@@ -23,25 +24,34 @@ public class TraceBuilder {
     private TraceBuilder(final Operation rootOperation) {
         traceId = generateId(128);
         spanClock = new SpanClock();
-        operationQueue = createSpansStack(rootOperation, null);
+        operationQueue = createSpansStack(rootOperation, generateId(64), null);
     }
 
     public static TraceBuilder newTrace(final Operation operation) {
         return new TraceBuilder(operation);
     }
 
-    private Deque<OperationContext> createSpansStack(final Operation rootOperation, final String parentId) {
+    private Deque<OperationContext> createSpansStack(final Operation rootOperation,
+                                                     final String spanId,
+                                                     final String parentId) {
+
         Deque<OperationContext> spansStack = new ArrayDeque<>();
-        OperationContext rootOperationContext = ZipkinContextFactory.createOperationCtx(
-                rootOperation, traceId,  parentId, spanClock.getCurrentTimeInMillis()
-        );
+
+        ZipkinContext zipkinContext = ZipkinContext.builder()
+                .parentId(parentId)
+                .spanId(spanId)
+                .traceId(traceId)
+                .startTime(spanClock.getCurrentTimeInMillis())
+                .build();
+
+        OperationContext rootOperationContext = ZipkinContextFactory.createOperationCtx(rootOperation, zipkinContext);
 
         spansStack.push(rootOperationContext);
         spanClock.advanceClockByMillis(10L);
         for (Operation op : rootOperation.getChildOperations()) {
-            String spanId = rootOperationContext.addClient(op, spanClock.getCurrentTimeInMillis());
+            String clientSpanId = rootOperationContext.addClient(op, spanClock.getCurrentTimeInMillis());
             spanClock.advanceClockByMillis(10L);
-            Deque<OperationContext> subStack = createSpansStack(op, spanId);
+            Deque<OperationContext> subStack = createSpansStack(op, clientSpanId, spanId);
             while (!subStack.isEmpty()) {
                 spansStack.push(subStack.pollLast());
             }
@@ -59,22 +69,23 @@ public class TraceBuilder {
             if (stackedElement.isLeaf()) {
                 stackedElement.updateServerResponse(spanClock.getCurrentTimeInMillis());
                 Stream.of(exporters).forEach(e -> e.write(stackedElement.message()));
-                serverSpanId.add(stackedElement.getServerParentId());
+                serverSpanId.add(stackedElement.getSpanServerId());
                 spanClock.advanceClockByMillis(10L);
                 continue;
             }
 
             spanClock.advanceClockByMillis(10L);
             if (!serverSpanId.isEmpty()) {
-                serverSpanId
-                        .removeIf(id -> stackedElement.updateClientWithParentId(spanClock.getCurrentTimeInMillis(), id));
+                serverSpanId.removeIf(
+                        id -> stackedElement.updateClientWithParentId(spanClock.getCurrentTimeInMillis(), id)
+                );
 
                 spanClock.advanceClockByMillis(10L);
                 stackedElement.updateServerResponse(spanClock.getCurrentTimeInMillis());
                 serverSpanId.clear();
             }
 
-            serverSpanId.add(stackedElement.getServerParentId());
+            serverSpanId.add(stackedElement.getSpanServerId());
 
             Stream.of(exporters).forEach(e -> e.write(stackedElement.message()));
         }
