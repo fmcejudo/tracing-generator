@@ -28,7 +28,7 @@ public class Operation {
     }
 
     public Map<String, String> getTags() {
-        return component.getTags();
+        return component.getTags(name);
     }
 
     public Map<String, String> getTags(final Span responseSpan) {
@@ -46,6 +46,5 @@ public class Operation {
     public String getServiceName() {
         return component.getServiceName();
     }
-
 
 }

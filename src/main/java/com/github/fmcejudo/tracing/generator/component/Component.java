@@ -8,7 +8,7 @@ public interface Component {
 
     boolean hasKind();
 
-    Map<String, String> getTags();
+    Map<String, String> getTags(final String operationName);
 
     Map<String, String> getTags(final Span span);
 

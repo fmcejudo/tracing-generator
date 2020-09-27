@@ -20,13 +20,13 @@ public class JdbcComponent implements Component {
     }
 
     @Override
-    public Map<String, String> getTags() {
+    public Map<String, String> getTags(final String operation) {
         return Map.of();
     }
 
     @Override
-    public Map<String, String> getTags(Span span) {
-        Map<String, String> tags = new HashMap<>(this.getTags());
+    public Map<String, String> getTags(final Span span) {
+        Map<String, String> tags = new HashMap<>(this.getTags(span.name()));
         tags.put("sql.query", "select * from tasks");
         return Map.copyOf(tags);
     }
