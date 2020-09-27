@@ -3,10 +3,8 @@ package com.github.fmcejudo.tracing.generator.builder.zipkin;
 import com.github.fmcejudo.tracing.generator.builder.OperationContext;
 import com.github.fmcejudo.tracing.generator.operation.Operation;
 import zipkin2.Span;
-import zipkin2.codec.SpanBytesEncoder;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,15 +41,13 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     @Override
     public String addClient(final Operation op, final long startTime) {
 
-        Map<String, String> tags = new HashMap<>(this.spanContext.getTags());
-        tags.put("http.method", "GET");
-        tags.put("http.path", op.getName().replace("get ", ""));
+        Map<String, String> tags = op.getTags(this.spanContext.span());
 
         SpanContext spanClientContext = SpanContext.builder()
                 .receiveTime(startTime)
                 .traceId(this.traceId)
                 .spanId(generateId(64))
-                .name("get")
+                .name(op.getName())
                 .kind(Span.Kind.CLIENT)
                 .tags(tags)
                 .parentId(this.spanContext.getSpanId())
@@ -68,12 +64,11 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
         return clientContextList.isEmpty();
     }
 
-    @Override
-    public byte[] message() {
+    List<Span> generatedSpans() {
         List<Span> spanList = new ArrayList<>();
         spanList.add(this.spanContext.span());
         clientContextList.stream().map(SpanContext::span).forEach(spanList::add);
-        return SpanBytesEncoder.JSON_V2.encodeList(spanList);
+        return spanList;
     }
 
     @Override

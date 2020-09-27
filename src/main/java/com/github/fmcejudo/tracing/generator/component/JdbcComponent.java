@@ -1,15 +1,16 @@
 package com.github.fmcejudo.tracing.generator.component;
 
+
 import zipkin2.Span;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpComponent implements Component {
+public class JdbcComponent implements Component {
 
     @Override
     public boolean hasKind() {
-        return true;
+        return false;
     }
 
     @Override
@@ -18,15 +19,14 @@ public class HttpComponent implements Component {
     }
 
     @Override
-    public Map<String, String> getTags(final Span span) {
+    public Map<String, String> getTags(Span span) {
         Map<String, String> tags = new HashMap<>(this.getTags());
-        tags.put("http.method", "get");
-        tags.put("http.url", span.name());
+        tags.put("sql.query", "select * from tasks");
         return Map.copyOf(tags);
     }
 
     @Override
     public String getLocalComponent() {
-        return "http";
+        return "jdbc";
     }
 }

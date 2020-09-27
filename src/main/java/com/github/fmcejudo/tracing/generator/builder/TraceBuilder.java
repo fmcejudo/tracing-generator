@@ -91,7 +91,6 @@ public class TraceBuilder {
         }
     }
 
-
     private static class SpanClock {
         private long advanceTime = 0L;
 

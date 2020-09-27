@@ -13,7 +13,7 @@ public final class ZipkinContextFactory {
     /**
      * It creates an object which will build the spans in a zipkin V2_JSON format
      *
-     * @param operation one of the available
+     * @param operation     as one instrumented task in a component
      * @param zipkinContext with parent information to build next
      * @return
      */
@@ -25,6 +25,7 @@ public final class ZipkinContextFactory {
                     throw new RuntimeException("local component can not be null");
                 }),
                 Case($("http"), HttpOperationContext.create(operation, zipkinContext)),
+                Case($("jdbc"), JdbcOperationContext.create(operation, zipkinContext)),
                 Case($(), () -> {
                     throw new RuntimeException("local component does not exist or not implemented yet");
                 }));

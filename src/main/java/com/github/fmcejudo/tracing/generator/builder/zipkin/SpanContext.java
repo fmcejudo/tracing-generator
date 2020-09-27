@@ -36,7 +36,6 @@ final class SpanContext {
                 .id(spanId)
                 .name(name)
                 .kind(kind)
-                .putTag("lc", "http")
                 .timestamp(MICROSECONDS.convert(receiveTime, MILLISECONDS))
                 .duration(MICROSECONDS.convert(responseTime - receiveTime, MILLISECONDS))
                 .localEndpoint(Endpoint.newBuilder().serviceName(serviceName).build());

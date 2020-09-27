@@ -28,17 +28,12 @@ public class Operation {
         return new Operation(component, operationName, serviceName);
     }
 
-    public Operation withDuration(final long duration) {
-        this.duration = duration;
-        return this;
-    }
-
     public Map<String, String> getTags() {
         return component.getTags();
     }
 
     public Map<String, String> getTags(final Span responseSpan) {
-        return component.getTags();
+        return component.getTags(responseSpan);
     }
 
     public String serviceName() {
@@ -51,10 +46,6 @@ public class Operation {
 
     public boolean hasChildren() {
         return !childOperations.isEmpty();
-    }
-
-    public Long getDuration() {
-        return duration;
     }
 
 }

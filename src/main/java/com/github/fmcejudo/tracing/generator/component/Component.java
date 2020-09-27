@@ -6,11 +6,11 @@ import java.util.Map;
 
 public interface Component {
 
-    String getLocalComponent();
-
     boolean hasKind();
 
     Map<String, String> getTags();
 
     Map<String, String> getTags(final Span span);
+
+    String getLocalComponent();
 }
