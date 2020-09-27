@@ -13,4 +13,6 @@ public interface Component {
     Map<String, String> getTags(final Span span);
 
     String getLocalComponent();
+
+    String getServiceName();
 }

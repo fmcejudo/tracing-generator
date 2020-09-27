@@ -31,7 +31,7 @@ class TraceGeneratorTest {
     @Test
     void shouldGenerateSpansForOperation() {
         //Given
-        Operation operation = Operation.from(new HttpComponent(), "get /a", "service A");
+        Operation operation = Operation.from(new HttpComponent("service A"), "get /a");
         TraceGenerator.create(List.of(exporter))
                 .withThreads(1)
                 .addOperation(operation);

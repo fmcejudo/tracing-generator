@@ -8,6 +8,12 @@ import java.util.Map;
 
 public class JdbcComponent implements Component {
 
+    private final String serviceName;
+
+    public JdbcComponent(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
     @Override
     public boolean hasKind() {
         return false;
@@ -28,5 +34,10 @@ public class JdbcComponent implements Component {
     @Override
     public String getLocalComponent() {
         return "jdbc";
+    }
+
+    @Override
+    public String getServiceName() {
+        return serviceName;
     }
 }

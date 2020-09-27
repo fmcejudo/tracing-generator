@@ -13,15 +13,15 @@ class TraceBuilderTest {
 
         //Given
         TestTraceExporter exporter = new TestTraceExporter();
-        Operation internetOperation = Operation.from(new HttpComponent(), "get /a/list", "service A");
-        Operation operationInAMicroservice = Operation.from(new HttpComponent(), "get /list", "service B");
+        Operation internetOperation = Operation.from(new HttpComponent("service A"), "get /a/list");
+        Operation operationInAMicroservice = Operation.from(new HttpComponent("service B"), "get /list");
 
         internetOperation.addChildOperation(operationInAMicroservice);
 
-        Operation queryingATaskDatabase = Operation.from(new JdbcComponent(), "select", "database");
+        Operation queryingATaskDatabase = Operation.from(new JdbcComponent("database"), "select");
         operationInAMicroservice.addChildOperation(queryingATaskDatabase);
 
-        Operation insertingATaskDatabase = Operation.from(new JdbcComponent(), "insert", "database");
+        Operation insertingATaskDatabase = Operation.from(new JdbcComponent("database"), "insert");
         operationInAMicroservice.addChildOperation(insertingATaskDatabase);
 
         //When

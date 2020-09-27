@@ -19,13 +19,12 @@ public class Operation {
 
     private final Component component;
     private final String name;
-    private final String serviceName;
     private long duration = 10L;
 
     private List<Operation> childOperations = new ArrayList<>();
 
-    public static Operation from(final Component component, final String operationName, final String serviceName) {
-        return new Operation(component, operationName, serviceName);
+    public static Operation from(final Component component, final String operationName) {
+        return new Operation(component, operationName);
     }
 
     public Map<String, String> getTags() {
@@ -37,15 +36,16 @@ public class Operation {
     }
 
     public String serviceName() {
-        return Optional.ofNullable(serviceName).map(String::toLowerCase).orElse("");
+        return Optional.ofNullable(this.getServiceName()).map(String::toLowerCase).orElse("");
     }
 
     public void addChildOperation(final Operation operation) {
         childOperations.add(operation);
     }
 
-    public boolean hasChildren() {
-        return !childOperations.isEmpty();
+    public String getServiceName() {
+        return component.getServiceName();
     }
+
 
 }
