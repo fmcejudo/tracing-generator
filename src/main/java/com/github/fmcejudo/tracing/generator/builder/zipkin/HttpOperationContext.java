@@ -17,18 +17,16 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     private final List<SpanContext> clientContextList = new ArrayList<>();
     private final String traceId;
     private final String serviceName;
-    private final String name;
 
     HttpOperationContext(final Operation operation, final ZipkinContext zipkinContext) {
         this.traceId = zipkinContext.getTraceId();
-        this.name = operation.getName();
         this.serviceName = operation.getServiceName();
         this.spanContext = SpanContext.builder()
                 .parentId(zipkinContext.getParentId())
                 .receiveTime(zipkinContext.getStartTime())
                 .kind(Span.Kind.SERVER)
                 .traceId(traceId)
-                .name(name)
+                .name(operation.getName())
                 .tags(operation.getTags())
                 .serviceName(serviceName)
                 .spanId(zipkinContext.getSpanId()).build();
@@ -49,7 +47,7 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
                 .spanId(generateId(64))
                 .name(op.getName())
                 .kind(Span.Kind.CLIENT)
-                .tags(tags)
+                .tags(this.spanContext.getTags())
                 .parentId(this.spanContext.getSpanId())
                 .serviceName(serviceName)
                 .remoteServiceName(op.serviceName())

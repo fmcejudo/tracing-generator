@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 
 class TraceGeneratorTest {
 
-
     @Mock
     private Exporter exporter;
 
@@ -34,13 +33,13 @@ class TraceGeneratorTest {
         Operation operation = Operation.from(new HttpComponent("service A"), "get /a");
         TraceGenerator.create(List.of(exporter))
                 .withThreads(1)
-                .addOperation(operation);
+                .addOperation(operation, 1_000);
 
         //When
         TimeUnit.SECONDS.sleep(2);
 
         //Then
-        Mockito.verify(exporter, Mockito.atLeast(5)).write(any());
+        Mockito.verify(exporter, Mockito.atLeastOnce()).write(any());
     }
 
 }

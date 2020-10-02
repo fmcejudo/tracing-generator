@@ -34,11 +34,11 @@ public class TraceGenerator {
         return new TraceGenerator(this.exporterList, threads);
     }
 
-    public TraceGenerator addOperation(final Operation operation) {
+    public TraceGenerator addOperation(final Operation operation, final long intervalMs) {
         executorService.submit(() -> {
             while (true) {
                 TraceBuilder.newTrace(operation).export(exporterList.toArray(Exporter[]::new));
-                Try.run(() -> TimeUnit.MILLISECONDS.sleep(50L));
+                Try.run(() -> TimeUnit.MILLISECONDS.sleep(intervalMs));
             }
         });
         return this;
