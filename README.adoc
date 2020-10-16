@@ -33,7 +33,7 @@ Operation.from(Microservice.builder()
         );
 ----
 
-Adding operation to executor, exposing results through defined exporters.
+Adding task to executor, exposing results through defined exporters.
 
 [source,java]
 ----

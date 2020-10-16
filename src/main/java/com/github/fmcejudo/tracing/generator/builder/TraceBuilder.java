@@ -3,103 +3,91 @@ package com.github.fmcejudo.tracing.generator.builder;
 import com.github.fmcejudo.tracing.generator.builder.zipkin.ZipkinContext;
 import com.github.fmcejudo.tracing.generator.builder.zipkin.ZipkinContextFactory;
 import com.github.fmcejudo.tracing.generator.exporter.Exporter;
-import com.github.fmcejudo.tracing.generator.operation.Operation;
+import com.github.fmcejudo.tracing.generator.task.Task;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static com.github.fmcejudo.tracing.generator.builder.IdGenerator.generateId;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 public class TraceBuilder {
 
-    private final Deque<OperationContext> operationQueue;
+
+    private static final long LATENCY = 5;
     private final String traceId;
 
     private final SpanClock spanClock;
 
-    private TraceBuilder(final Operation rootOperation) {
+    private final List<Exporter> exporterList;
+
+    private final Task rootTask;
+
+    private TraceBuilder(final Task rootTask, final Exporter... exporters) {
+        this.rootTask = rootTask;
         traceId = generateId(128);
         spanClock = new SpanClock();
-        operationQueue = createSpansStack(rootOperation, generateId(64), null);
+        exporterList = List.of(exporters);
     }
 
-    public static TraceBuilder newTrace(final Operation operation) {
-        return new TraceBuilder(operation);
+    public static TraceBuilder newTrace(final Task task, final Exporter... exporters) {
+        return new TraceBuilder(task, exporters);
     }
 
-    private Deque<OperationContext> createSpansStack(final Operation rootOperation,
-                                                     final String spanId,
-                                                     final String parentId) {
+    public void build() {
+        build(rootTask, null);
+    }
 
-        Deque<OperationContext> spansStack = new ArrayDeque<>();
+    private OperationContext build(final Task task, final String parentId) {
 
         ZipkinContext zipkinContext = ZipkinContext.builder()
                 .parentId(parentId)
-                .spanId(spanId)
+                .spanId(generateId(64))
                 .traceId(traceId)
-                .startTime(spanClock.getCurrentTimeInMillis())
+                .startTime(spanClock.getCurrentTimeInMicroseconds())
                 .build();
 
-        OperationContext rootOperationContext = ZipkinContextFactory.createOperationCtx(rootOperation, zipkinContext);
+        OperationContext operationContext = ZipkinContextFactory.createOperationCtx(task, zipkinContext);
 
-        spansStack.push(rootOperationContext);
-        spanClock.advanceClockByMillis(10L);
-        for (Operation op : rootOperation.getChildOperations()) {
-            String clientSpanId = rootOperationContext.addClient(op, spanClock.getCurrentTimeInMillis());
-            spanClock.advanceClockByMillis(10L);
-            Deque<OperationContext> subStack = createSpansStack(op, clientSpanId, spanId);
-            while (!subStack.isEmpty()) {
-                spansStack.push(subStack.pollLast());
+        spanClock.advanceClockByMillis(LATENCY);
+
+        if (task.getChildTasks().size() != 0) {
+            Iterator<Task> taskIterator = task.getChildTasks().iterator();
+            while (taskIterator.hasNext()) {
+                spanClock.advanceClockByMillis(LATENCY);
+                Task childrenTask = taskIterator.next();
+                String clientSpanId =
+                        operationContext.addClient(childrenTask, spanClock.getCurrentTimeInMicroseconds());
+                OperationContext childrenOperation = build(childrenTask, clientSpanId);
+                spanClock.advanceClockByMillis(childrenOperation.duration() + LATENCY);
+                operationContext.updateClientWithSpanId(spanClock.getCurrentTimeInMicroseconds(), clientSpanId);
             }
         }
-        return spansStack;
+        spanClock.advanceClockByMillis(LATENCY + task.getDuration());
+        operationContext.updateServerResponse(spanClock.getCurrentTimeInMicroseconds());
+        exportTrace(operationContext);
+        return operationContext;
     }
 
-    public void export(final Exporter... exporters) {
-
-        List<String> serverSpanId = new ArrayList<>();
-
-        while (!operationQueue.isEmpty()) {
-            OperationContext stackedElement = operationQueue.pop();
-
-            if (stackedElement.isLeaf()) {
-                stackedElement.updateServerResponse(spanClock.getCurrentTimeInMillis());
-                Stream.of(exporters).forEach(e -> e.write(stackedElement.message()));
-                serverSpanId.add(stackedElement.getSpanServerId());
-                spanClock.advanceClockByMillis(10L);
-                continue;
-            }
-
-            spanClock.advanceClockByMillis(10L);
-            if (!serverSpanId.isEmpty()) {
-                serverSpanId.removeIf(
-                        id -> stackedElement.updateClientWithParentId(spanClock.getCurrentTimeInMillis(), id)
-                );
-
-                spanClock.advanceClockByMillis(10L);
-                stackedElement.updateServerResponse(spanClock.getCurrentTimeInMillis());
-                serverSpanId.clear();
-            }
-
-            serverSpanId.add(stackedElement.getSpanServerId());
-
-            Stream.of(exporters).forEach(e -> e.write(stackedElement.message()));
-        }
+    private void exportTrace(final OperationContext operationContext) {
+        exporterList.forEach(e -> e.write(operationContext.message()));
     }
 
     private static class SpanClock {
-        private long advanceTime = 0L;
+        private long currentTime = System.currentTimeMillis();
 
         public void advanceClockByMillis(long milliseconds) {
-            advanceTime += milliseconds;
+            currentTime += milliseconds;
         }
 
-        public long getCurrentTimeInMillis() {
-            return System.currentTimeMillis() + advanceTime;
+        public long getCurrentTimeInMicroseconds() {
+            return MICROSECONDS.convert(currentTime, MILLISECONDS);
         }
     }
 }

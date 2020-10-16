@@ -1,7 +1,7 @@
 package com.github.fmcejudo.tracing.generator.builder.zipkin;
 
 import com.github.fmcejudo.tracing.generator.builder.OperationContext;
-import com.github.fmcejudo.tracing.generator.operation.Operation;
+import com.github.fmcejudo.tracing.generator.task.Task;
 import io.vavr.API;
 import io.vavr.Predicates;
 
@@ -13,19 +13,19 @@ public final class ZipkinContextFactory {
     /**
      * It creates an object which will build the spans in a zipkin V2_JSON format
      *
-     * @param operation     as one instrumented task in a component
+     * @param task     as one instrumented task in a component
      * @param zipkinContext with parent information to build next
      * @return
      */
-    public static OperationContext createOperationCtx(final Operation operation,
+    public static OperationContext createOperationCtx(final Task task,
                                                       final ZipkinContext zipkinContext) {
 
-        return API.Match(operation.getComponent().getLocalComponent()).of(
+        return API.Match(task.getComponent().getLocalComponent()).of(
                 Case($(Predicates.isNull()), () -> {
                     throw new RuntimeException("local component can not be null");
                 }),
-                Case($("http"), HttpOperationContext.create(operation, zipkinContext)),
-                Case($("jdbc"), JdbcOperationContext.create(operation, zipkinContext)),
+                Case($("http"), HttpOperationContext.create(task, zipkinContext)),
+                Case($("jdbc"), JdbcOperationContext.create(task, zipkinContext)),
                 Case($(), () -> {
                     throw new RuntimeException("local component does not exist or not implemented yet");
                 }));

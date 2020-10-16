@@ -1,13 +1,15 @@
 package com.github.fmcejudo.tracing.generator.builder.zipkin;
 
 import com.github.fmcejudo.tracing.generator.builder.OperationContext;
-import com.github.fmcejudo.tracing.generator.operation.Operation;
+import com.github.fmcejudo.tracing.generator.task.Task;
 import zipkin2.Span;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.fmcejudo.tracing.generator.builder.IdGenerator.generateId;
 
@@ -18,39 +20,39 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     private final String traceId;
     private final String serviceName;
 
-    HttpOperationContext(final Operation operation, final ZipkinContext zipkinContext) {
+    HttpOperationContext(final Task task, final ZipkinContext zipkinContext) {
         this.traceId = zipkinContext.getTraceId();
-        this.serviceName = operation.getServiceName();
+        this.serviceName = task.getServiceName();
         this.spanContext = SpanContext.builder()
                 .parentId(zipkinContext.getParentId())
                 .receiveTime(zipkinContext.getStartTime())
                 .kind(Span.Kind.SERVER)
                 .traceId(traceId)
-                .name(operation.getName())
-                .tags(operation.getTags())
+                .name(task.getName())
+                .tags(task.getTags())
                 .serviceName(serviceName)
                 .spanId(zipkinContext.getSpanId()).build();
     }
 
-    static HttpOperationContext create(final Operation operation, final ZipkinContext zipkinContext) {
-        return new HttpOperationContext(operation, zipkinContext);
+    static HttpOperationContext create(final Task task, final ZipkinContext zipkinContext) {
+        return new HttpOperationContext(task, zipkinContext);
     }
 
     @Override
-    public String addClient(final Operation op, final long startTime) {
+    public String addClient(final Task task, final long startTime) {
 
-        Map<String, String> tags = op.getTags(this.spanContext.span());
+        Map<String, String> tags = task.getTags(this.spanContext.span());
 
         SpanContext spanClientContext = SpanContext.builder()
                 .receiveTime(startTime)
                 .traceId(this.traceId)
                 .spanId(generateId(64))
-                .name(op.getName())
+                .name(task.getName())
                 .kind(Span.Kind.CLIENT)
                 .tags(this.spanContext.getTags())
                 .parentId(this.spanContext.getSpanId())
                 .serviceName(serviceName)
-                .remoteServiceName(op.serviceName())
+                .remoteServiceName(task.serviceName())
                 .build();
 
         clientContextList.add(spanClientContext);
@@ -71,11 +73,11 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
 
     @Override
     public String getSpanServerId() {
-        return spanContext.getSpanId();
+        return spanContext.getParentId();
     }
 
     @Override
-    public boolean updateClientWithParentId(final long responseTime, final String parentId) {
+    public boolean updateClientWithSpanId(final long responseTime, final String parentId) {
         Optional<SpanContext> span =
                 clientContextList.stream().filter(s -> s.getSpanId().equals(parentId)).findFirst();
         span.ifPresent(s -> s.setResponseTime(responseTime));
@@ -86,5 +88,18 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     public void updateServerResponse(final long endTime) {
         spanContext.setResponseTime(endTime);
     }
+
+    @Override
+    public List<String> spanIdsInContext() {
+        return Stream.concat(
+                Stream.of(spanContext.getSpanId()),
+                clientContextList.stream().map(SpanContext::getSpanId)
+        ).collect(Collectors.toList());
+    }
+
+    public long duration() {
+        return (spanContext.getResponseTime() - spanContext.getReceiveTime())/1_000;
+    }
+
 }
 

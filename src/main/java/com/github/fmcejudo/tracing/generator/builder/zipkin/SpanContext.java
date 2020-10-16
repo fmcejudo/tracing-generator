@@ -36,8 +36,8 @@ final class SpanContext {
                 .id(spanId)
                 .name(name)
                 .kind(kind)
-                .timestamp(MICROSECONDS.convert(receiveTime, MILLISECONDS))
-                .duration(MICROSECONDS.convert(responseTime - receiveTime, MILLISECONDS))
+                .timestamp(receiveTime)
+                .duration(responseTime - receiveTime)
                 .localEndpoint(Endpoint.newBuilder().serviceName(serviceName).build());
 
         if (StringUtils.isNotBlank(remoteServiceName)) {

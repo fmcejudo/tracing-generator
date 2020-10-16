@@ -3,7 +3,7 @@ package com.github.fmcejudo.tracing.generator.service;
 import com.github.fmcejudo.tracing.generator.component.HttpComponent;
 import com.github.fmcejudo.tracing.generator.exporter.Exporter;
 import com.github.fmcejudo.tracing.generator.exporter.LoggingExporter;
-import com.github.fmcejudo.tracing.generator.operation.Operation;
+import com.github.fmcejudo.tracing.generator.task.Task;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,10 +30,10 @@ class TraceGeneratorTest {
     @Test
     void shouldGenerateSpansForOperation() {
         //Given
-        Operation operation = Operation.from(new HttpComponent("service A"), "get /a");
+        Task task = Task.from(new HttpComponent("service A"), "get /a");
         TraceGenerator.create(List.of(exporter))
                 .withThreads(1)
-                .addOperation(operation, 1_000);
+                .addOperation(task, 1_000);
 
         //When
         TimeUnit.SECONDS.sleep(2);

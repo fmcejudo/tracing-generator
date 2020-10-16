@@ -1,18 +1,24 @@
 package com.github.fmcejudo.tracing.generator.builder;
 
-import com.github.fmcejudo.tracing.generator.operation.Operation;
+import com.github.fmcejudo.tracing.generator.task.Task;
+
+import java.util.List;
 
 public interface OperationContext {
 
     String getSpanServerId();
 
-    String addClient(Operation op, long startTime);
+    String addClient(Task task, long startTime);
 
     boolean isLeaf();
 
     byte[] message();
 
-    boolean updateClientWithParentId(long responseTime, String parentId);
+    long duration();
+
+    boolean updateClientWithSpanId(long responseTime, String parentId);
 
     void updateServerResponse(long endTime);
+
+    List<String> spanIdsInContext();
 }

@@ -8,7 +8,9 @@ import zipkin2.SpanBytesDecoderDetector;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TestTraceExporter implements Exporter {
 
@@ -26,6 +28,12 @@ public class TestTraceExporter implements Exporter {
         spanList.add(spans);
     }
 
+    public List<Span> flatMapSpan() {
+        return spanList.stream().flatMap(List::stream)
+                .sorted(Comparator.comparing(Span::timestamp))
+                .collect(Collectors.toList());
+    }
+
     public TraceAssert assertThat() {
         return traceAssert;
     }
@@ -36,7 +44,7 @@ public class TestTraceExporter implements Exporter {
             super(spans, TraceAssert.class);
         }
 
-        public TraceAssert hasSize(int size) {
+        public TraceAssert spansSize(int size) {
             if (this.actual.size() != size) {
                 failWithMessage("Expected %d traces, but found %d", size, this.actual.size());
             }
@@ -57,12 +65,25 @@ public class TestTraceExporter implements Exporter {
         }
 
         public TraceAssert spansHaveTimestamp() {
-            if (this.actual.stream().flatMap(Collection::stream)
-                    .anyMatch(s -> s.timestamp() == null)) {
-                failWithMessage("Timestamp is mandatory field in span");
+            if (this.actual.stream().flatMap(Collection::stream).anyMatch(s -> s.timestamp() == null)) {
+                String failures = this.actual.stream()
+                        .flatMap(Collection::stream)
+                        .filter(s -> s.timestamp() == null)
+                        .map(s -> String.join("-", s.localServiceName(), s.name()))
+                        .collect(Collectors.joining(","));
+                failWithMessage("Timestamp is mandatory field in span: %s", failures);
             }
             return this;
         }
-    }
 
+        public TraceAssert spansHaveDuration() {
+            this.actual.stream().flatMap(Collection::stream)
+                    .filter(s -> s.duration() == null)
+                    .peek(s -> System.out.printf("%s in %s\n", s.name(), s.localServiceName()))
+                    .findAny()
+                    .ifPresent(s -> failWithMessage("Duration is mandatory field in span"));
+
+            return this;
+        }
+    }
 }
