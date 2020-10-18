@@ -5,10 +5,6 @@ import com.github.fmcejudo.tracing.generator.builder.zipkin.ZipkinContextFactory
 import com.github.fmcejudo.tracing.generator.exporter.Exporter;
 import com.github.fmcejudo.tracing.generator.task.Task;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,7 +14,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 public class TraceBuilder {
-
 
     private static final long LATENCY = 5;
     private final String traceId;

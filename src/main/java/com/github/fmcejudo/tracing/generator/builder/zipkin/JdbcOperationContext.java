@@ -23,7 +23,7 @@ public class JdbcOperationContext extends AbstractOperationContext {
                 .traceId(zipkinContext.getTraceId())
                 .name(task.getName())
                 .kind(Span.Kind.CLIENT)
-                .localEndpoint(Endpoint.newBuilder().serviceName(task.getServiceName()).build())
+                .localEndpoint(Endpoint.newBuilder().serviceName(task.serviceName()).build())
                 .putTag("lc", "jdbc")
                 .timestamp(zipkinContext.getStartTime())
                 .duration(task.getDuration());
@@ -31,19 +31,10 @@ public class JdbcOperationContext extends AbstractOperationContext {
         return new JdbcOperationContext(spanBuilder, zipkinContext.getStartTime(), zipkinContext.getSpanId());
     }
 
-    @Override
-    public String getSpanServerId() {
-        return clientSpanBuilder.build().parentId();
-    }
 
     @Override
     public String addClient(final Task task, final long startTime) {
         throw new RuntimeException("Jdbc operations don't link with other component");
-    }
-
-    @Override
-    public boolean isLeaf() {
-        return true;
     }
 
     @Override
@@ -58,11 +49,6 @@ public class JdbcOperationContext extends AbstractOperationContext {
 
     @Override
     public void updateServerResponse(long endTime) {
-    }
-
-    @Override
-    public List<String> spanIdsInContext() {
-        return List.of(spanId);
     }
 
     public long duration() {

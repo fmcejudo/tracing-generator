@@ -2,6 +2,7 @@ package com.github.fmcejudo.tracing.generator.builder;
 
 import com.github.fmcejudo.tracing.generator.component.HttpComponent;
 import com.github.fmcejudo.tracing.generator.component.JdbcComponent;
+import com.github.fmcejudo.tracing.generator.exporter.ZipkinExporter;
 import com.github.fmcejudo.tracing.generator.task.Task;
 import com.github.fmcejudo.tracing.generator.util.TestTraceExporter;
 import org.assertj.core.api.Assertions;
@@ -28,7 +29,7 @@ class TraceBuilderTest {
         authenticationTask.needsFrom(tokenValidationService, "get /validate");
 
         //When
-        TraceBuilder.newTrace(authenticationTask, testTraceExporter).build();
+        TraceBuilder.newTrace(authenticationTask, testTraceExporter, new ZipkinExporter("http://localhost:9411")).build();
 
         //Then
         testTraceExporter.assertThat().spansSize(4).hasSameTraceId().spansHaveTimestamp().spansHaveDuration();

@@ -8,11 +8,12 @@ public interface Component {
 
     boolean hasKind();
 
-    Map<String, String> getTags(final String operationName);
+    Map<String, String> getServerTags(final String operationName);
 
-    Map<String, String> getTags(final Span span);
+    Map<String, String> getClientTags(Component childComponent, String operation);
 
     String getLocalComponent();
 
     String getServiceName();
+
 }

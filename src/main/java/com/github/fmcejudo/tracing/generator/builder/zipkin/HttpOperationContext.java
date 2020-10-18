@@ -8,29 +8,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.fmcejudo.tracing.generator.builder.IdGenerator.generateId;
 
 final class HttpOperationContext extends AbstractOperationContext implements OperationContext {
 
-    private final SpanContext spanContext;
-    private final List<SpanContext> clientContextList = new ArrayList<>();
+    private final SpanContext serverSpanContext;
+    private final List<SpanContext> clientSpanContextList = new ArrayList<>();
     private final String traceId;
-    private final String serviceName;
+    private final Task task;
 
     HttpOperationContext(final Task task, final ZipkinContext zipkinContext) {
         this.traceId = zipkinContext.getTraceId();
-        this.serviceName = task.getServiceName();
-        this.spanContext = SpanContext.builder()
+        this.task = task;
+        this.serverSpanContext = SpanContext.builder()
                 .parentId(zipkinContext.getParentId())
                 .receiveTime(zipkinContext.getStartTime())
                 .kind(Span.Kind.SERVER)
                 .traceId(traceId)
                 .name(task.getName())
-                .tags(task.getTags())
-                .serviceName(serviceName)
+                .tags(task.getServerTags())
+                .serviceName(task.serviceName())
+                .remoteServiceName("authenticationService")
                 .spanId(zipkinContext.getSpanId()).build();
     }
 
@@ -39,67 +39,49 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     }
 
     @Override
-    public String addClient(final Task task, final long startTime) {
-
-        Map<String, String> tags = task.getTags(this.spanContext.span());
+    public String addClient(final Task childrenTask, final long startTime) {
 
         SpanContext spanClientContext = SpanContext.builder()
                 .receiveTime(startTime)
                 .traceId(this.traceId)
                 .spanId(generateId(64))
-                .name(task.getName())
+                .name(clientSpanName(childrenTask.getName()))
                 .kind(Span.Kind.CLIENT)
-                .tags(this.spanContext.getTags())
-                .parentId(this.spanContext.getSpanId())
-                .serviceName(serviceName)
-                .remoteServiceName(task.serviceName())
+                .tags(task.getClientTags(childrenTask))
+                .parentId(this.serverSpanContext.getSpanId())
+                .serviceName(task.serviceName())
                 .build();
 
-        clientContextList.add(spanClientContext);
+        clientSpanContextList.add(spanClientContext);
         return spanClientContext.getSpanId();
     }
 
-    @Override
-    public boolean isLeaf() {
-        return clientContextList.isEmpty();
+    private String clientSpanName(final String operationName) {
+        return Stream.of(operationName.split(" ")).findFirst().orElse("get");
     }
 
     List<Span> generatedSpans() {
         List<Span> spanList = new ArrayList<>();
-        spanList.add(this.spanContext.span());
-        clientContextList.stream().map(SpanContext::span).forEach(spanList::add);
+        spanList.add(this.serverSpanContext.span());
+        clientSpanContextList.stream().map(SpanContext::span).forEach(spanList::add);
         return spanList;
     }
 
     @Override
-    public String getSpanServerId() {
-        return spanContext.getParentId();
+    public void updateServerResponse(final long endTime) {
+        serverSpanContext.setResponseTime(endTime);
     }
 
     @Override
     public boolean updateClientWithSpanId(final long responseTime, final String parentId) {
         Optional<SpanContext> span =
-                clientContextList.stream().filter(s -> s.getSpanId().equals(parentId)).findFirst();
+                clientSpanContextList.stream().filter(s -> s.getSpanId().equals(parentId)).findFirst();
         span.ifPresent(s -> s.setResponseTime(responseTime));
         return span.isPresent();
     }
 
-    @Override
-    public void updateServerResponse(final long endTime) {
-        spanContext.setResponseTime(endTime);
-    }
-
-    @Override
-    public List<String> spanIdsInContext() {
-        return Stream.concat(
-                Stream.of(spanContext.getSpanId()),
-                clientContextList.stream().map(SpanContext::getSpanId)
-        ).collect(Collectors.toList());
-    }
-
     public long duration() {
-        return (spanContext.getResponseTime() - spanContext.getReceiveTime())/1_000;
+        return (serverSpanContext.getResponseTime() - serverSpanContext.getReceiveTime()) / 1_000;
     }
-
 }
 

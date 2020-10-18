@@ -10,9 +10,6 @@ import zipkin2.Span;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 @Data
 @Builder
 final class SpanContext {

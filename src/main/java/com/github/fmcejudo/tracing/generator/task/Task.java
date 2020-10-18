@@ -3,10 +3,8 @@ package com.github.fmcejudo.tracing.generator.task;
 import com.github.fmcejudo.tracing.generator.component.Component;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import zipkin2.Span;
 
 import java.util.ArrayList;
@@ -29,20 +27,16 @@ public class Task {
         return new Task(component, operationName, 1000L);
     }
 
-    public Map<String, String> getTags() {
-        return component.getTags(name);
+    public Map<String, String> getServerTags() {
+        return component.getServerTags(name);
     }
 
-    public Map<String, String> getTags(final Span responseSpan) {
-        return component.getTags(responseSpan);
+    public Map<String, String> getClientTags(final Task childTask) {
+        return component.getClientTags(childTask.getComponent(), childTask.getName());
     }
 
     public String serviceName() {
-        return Optional.ofNullable(this.getServiceName()).map(String::toLowerCase).orElse("");
-    }
-
-    public String getServiceName() {
-        return component.getServiceName();
+        return Optional.ofNullable(component.getServiceName()).map(String::toLowerCase).orElse("");
     }
 
     public Task needsFrom(final Component service, String operationName) {

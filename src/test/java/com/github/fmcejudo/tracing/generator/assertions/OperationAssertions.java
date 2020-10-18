@@ -6,7 +6,7 @@ import org.assertj.core.api.AbstractAssert;
 
 import java.util.stream.Stream;
 
-import static java.lang.String.*;
+import static java.lang.String.join;
 
 public class OperationAssertions extends AbstractAssert<OperationAssertions, Task> {
 
@@ -31,13 +31,13 @@ public class OperationAssertions extends AbstractAssert<OperationAssertions, Tas
         }
         Stream.of(children).forEach(o -> {
             boolean present = this.actual.getChildTasks().stream().anyMatch(c ->
-                    o.getServiceName().equals(c.getServiceName()) && c.getName().equals(o.getName())
+                    o.serviceName().equals(c.serviceName()) && c.getName().equals(o.getName())
             );
 
             if (!present) {
                 failWithMessage(
                         "expected %s in %s to be amongst operation, but it is not",
-                        o.getName(), o.getServiceName()
+                        o.getName(), o.serviceName()
                 );
             }
         });
@@ -48,7 +48,7 @@ public class OperationAssertions extends AbstractAssert<OperationAssertions, Tas
         if (this.actual.getChildTasks().size() > 0) {
             failWithMessage(
                     "Children weren't expected in %s" ,
-                    join("-", this.actual.getName(), this.actual.getServiceName())
+                    join("-", this.actual.getName(), this.actual.serviceName())
             );
         }
         return this;

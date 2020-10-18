@@ -1,8 +1,6 @@
 package com.github.fmcejudo.tracing.generator.component;
 
 
-import zipkin2.Span;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,15 +18,15 @@ public class JdbcComponent implements Component {
     }
 
     @Override
-    public Map<String, String> getTags(final String operation) {
-        return Map.of();
+    public Map<String, String> getServerTags(final String operation) {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("sql.query", operation);
+        return Map.copyOf(tags);
     }
 
     @Override
-    public Map<String, String> getTags(final Span span) {
-        Map<String, String> tags = new HashMap<>(this.getTags(span.name()));
-        tags.put("sql.query", "select * from tasks");
-        return Map.copyOf(tags);
+    public Map<String, String> getClientTags(final Component childComponent, final String operationName) {
+        return Map.of();
     }
 
     @Override

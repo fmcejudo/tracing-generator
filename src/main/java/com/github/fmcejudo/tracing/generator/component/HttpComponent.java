@@ -22,7 +22,7 @@ public class HttpComponent implements Component {
     }
 
     @Override
-    public Map<String, String> getTags(final String operation) {
+    public Map<String, String> getServerTags(final String operation) {
 
         String[] operationChunks = operation.split(" ");
         String method = operationChunks[0];
@@ -40,8 +40,8 @@ public class HttpComponent implements Component {
     }
 
     @Override
-    public Map<String, String> getTags(final Span span) {
-        Map<String, String> tags = new HashMap<>(this.getTags(span.name()));
+    public Map<String, String> getClientTags(final Component childComponent, final String operationName) {
+        Map<String, String> tags = new HashMap<>(this.getServerTags(operationName));
         return Map.copyOf(tags);
     }
 
