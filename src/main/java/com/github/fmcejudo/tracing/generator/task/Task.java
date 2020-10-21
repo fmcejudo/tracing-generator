@@ -19,12 +19,12 @@ public class Task {
 
     private final Component component;
     private final String name;
-    private long duration = 1000L;
+    private long duration = 10_000L;
 
     private final List<Task> childTasks = new ArrayList<>();
 
     public static Task from(final Component component, final String operationName) {
-        return new Task(component, operationName, 1000L);
+        return new Task(component, operationName, 10_000L);
     }
 
     public Map<String, String> getServerTags() {

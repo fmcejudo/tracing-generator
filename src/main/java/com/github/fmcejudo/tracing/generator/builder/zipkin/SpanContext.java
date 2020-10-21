@@ -13,6 +13,7 @@ import java.util.Map;
 @Data
 @Builder
 final class SpanContext {
+
     private String parentId;
     private String spanId;
     private String traceId;

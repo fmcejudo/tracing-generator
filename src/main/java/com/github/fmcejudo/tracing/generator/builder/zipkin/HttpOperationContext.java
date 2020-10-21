@@ -6,7 +6,6 @@ import zipkin2.Span;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -30,7 +29,6 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
                 .name(task.getName())
                 .tags(task.getServerTags())
                 .serviceName(task.serviceName())
-                .remoteServiceName("authenticationService")
                 .spanId(zipkinContext.getSpanId()).build();
     }
 
@@ -84,4 +82,3 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
         return (serverSpanContext.getResponseTime() - serverSpanContext.getReceiveTime()) / 1_000;
     }
 }
-

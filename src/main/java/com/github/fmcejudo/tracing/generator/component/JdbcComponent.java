@@ -26,7 +26,7 @@ public class JdbcComponent implements Component {
 
     @Override
     public Map<String, String> getClientTags(final Component childComponent, final String operationName) {
-        return Map.of();
+        return getServerTags(operationName);
     }
 
     @Override

@@ -13,8 +13,6 @@ import java.util.List;
 public class JdbcOperationContext extends AbstractOperationContext {
 
     private final Span.Builder clientSpanBuilder;
-    private final long startTime;
-    private final String spanId;
 
     public static OperationContext create(final Task task, final ZipkinContext zipkinContext) {
         Span.Builder spanBuilder = Span.newBuilder()
@@ -24,11 +22,12 @@ public class JdbcOperationContext extends AbstractOperationContext {
                 .name(task.getName())
                 .kind(Span.Kind.CLIENT)
                 .localEndpoint(Endpoint.newBuilder().serviceName(task.serviceName()).build())
-                .putTag("lc", "jdbc")
                 .timestamp(zipkinContext.getStartTime())
                 .duration(task.getDuration());
 
-        return new JdbcOperationContext(spanBuilder, zipkinContext.getStartTime(), zipkinContext.getSpanId());
+        task.getServerTags().forEach(spanBuilder::putTag);
+
+        return new JdbcOperationContext(spanBuilder);
     }
 
 

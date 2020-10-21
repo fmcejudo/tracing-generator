@@ -60,11 +60,11 @@ public class TraceBuilder {
                 String clientSpanId =
                         operationContext.addClient(childrenTask, spanClock.getCurrentTimeInMicroseconds());
                 OperationContext childrenOperation = build(childrenTask, clientSpanId);
-                spanClock.advanceClockByMillis(childrenOperation.duration() + LATENCY);
+                spanClock.advanceClockByMillis(childrenOperation.duration() / 1000  + LATENCY);
                 operationContext.updateClientWithSpanId(spanClock.getCurrentTimeInMicroseconds(), clientSpanId);
             }
         }
-        spanClock.advanceClockByMillis(LATENCY + task.getDuration());
+        spanClock.advanceClockByMillis(LATENCY + task.getDuration()/ 1000);
         operationContext.updateServerResponse(spanClock.getCurrentTimeInMicroseconds());
         exportTrace(operationContext);
         return operationContext;
