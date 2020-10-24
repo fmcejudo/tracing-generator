@@ -15,7 +15,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class TraceBuilder {
 
-    private static final long LATENCY = 5;
+    private static final long LATENCY_MS = 5;
     private final String traceId;
 
     private final SpanClock spanClock;
@@ -50,21 +50,29 @@ public class TraceBuilder {
 
         OperationContext operationContext = ZipkinContextFactory.createOperationCtx(task, zipkinContext);
 
-        spanClock.advanceClockByMillis(LATENCY);
+        spanClock.advanceClockByMillis(LATENCY_MS);
 
         if (task.getChildTasks().size() != 0) {
             Iterator<Task> taskIterator = task.getChildTasks().iterator();
             while (taskIterator.hasNext()) {
-                spanClock.advanceClockByMillis(LATENCY);
+                spanClock.advanceClockByMillis(LATENCY_MS);
                 Task childrenTask = taskIterator.next();
                 String clientSpanId =
                         operationContext.addClient(childrenTask, spanClock.getCurrentTimeInMicroseconds());
+                spanClock.advanceClockByMillis(LATENCY_MS);
                 OperationContext childrenOperation = build(childrenTask, clientSpanId);
-                spanClock.advanceClockByMillis(childrenOperation.duration() / 1000  + LATENCY);
+
+                spanClock
+                        .advanceClockByMillis(LATENCY_MS)
+                        .advanceClockByMicroseconds(childrenOperation.duration());
+
                 operationContext.updateClientWithSpanId(spanClock.getCurrentTimeInMicroseconds(), clientSpanId);
             }
         }
-        spanClock.advanceClockByMillis(LATENCY + task.getDuration()/ 1000);
+        spanClock
+                .advanceClockByMillis(LATENCY_MS)
+                .advanceClockByMicroseconds(task.getDuration());
+
         operationContext.updateServerResponse(spanClock.getCurrentTimeInMicroseconds());
         exportTrace(operationContext);
         return operationContext;
@@ -77,8 +85,14 @@ public class TraceBuilder {
     private static class SpanClock {
         private long currentTime = System.currentTimeMillis();
 
-        public void advanceClockByMillis(long milliseconds) {
+        public SpanClock advanceClockByMillis(long milliseconds) {
             currentTime += milliseconds;
+            return this;
+        }
+
+        public SpanClock advanceClockByMicroseconds(long microseconds) {
+            advanceClockByMillis(MILLISECONDS.convert(microseconds, MICROSECONDS));
+            return this;
         }
 
         public long getCurrentTimeInMicroseconds() {

@@ -51,7 +51,7 @@ public class JdbcOperationContext extends AbstractOperationContext {
     }
 
     public long duration() {
-        return clientSpanBuilder.build().durationAsLong() / 1_000_000;
+        return clientSpanBuilder.build().durationAsLong();
     }
 
 }
