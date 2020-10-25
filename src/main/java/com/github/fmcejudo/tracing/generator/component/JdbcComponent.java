@@ -1,15 +1,19 @@
 package com.github.fmcejudo.tracing.generator.component;
 
 
+import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class JdbcComponent implements Component {
+public class JdbcComponent implements Component, DurationDelayer {
 
     private final String serviceName;
+    private DurationDelayer durationDelayer;
 
     public JdbcComponent(String serviceName) {
         this.serviceName = serviceName;
+        this.durationDelayer = duration -> 0;
     }
 
     @Override
@@ -38,4 +42,15 @@ public class JdbcComponent implements Component {
     public String getServiceName() {
         return serviceName;
     }
+
+    @Override
+    public void configureExtraDurationFn(DurationDelayer durationDelayer) {
+        this.durationDelayer = durationDelayer;
+    }
+
+    @Override
+    public long getExtraDuration(long duration) {
+        return durationDelayer.getExtraDuration(duration);
+    }
+
 }

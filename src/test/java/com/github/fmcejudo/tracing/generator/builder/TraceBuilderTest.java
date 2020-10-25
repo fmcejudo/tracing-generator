@@ -29,7 +29,7 @@ class TraceBuilderTest {
         authenticationTask.needsFrom(tokenValidationService, "get /validate");
 
         //When
-        TraceBuilder.newTrace(authenticationTask, testTraceExporter).build();
+        TraceBuilder.newTrace(authenticationTask, testTraceExporter, new ZipkinExporter("http://localhost:9411")).build();
 
         //Then
         testTraceExporter.assertThat().spansSize(4).hasSameTraceId().spansHaveTimestamp().spansHaveDuration();

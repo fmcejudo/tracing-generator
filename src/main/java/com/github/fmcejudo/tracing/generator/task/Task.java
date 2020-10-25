@@ -1,6 +1,7 @@
 package com.github.fmcejudo.tracing.generator.task;
 
 import com.github.fmcejudo.tracing.generator.component.Component;
+import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -43,5 +44,17 @@ public class Task {
         Task childTask = Task.from(service, operationName);
         childTasks.add(childTask);
         return childTask;
+    }
+
+    public Task duration(final long durationInMicros) {
+        this.duration = durationInMicros;
+        return this;
+    }
+
+    public long getDuration() {
+        if (component instanceof DurationDelayer) {
+            return duration + ((DurationDelayer) component).getExtraDuration(duration);
+        }
+        return duration;
     }
 }

@@ -1,6 +1,6 @@
 package com.github.fmcejudo.tracing.generator.component;
 
-import zipkin2.Span;
+import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
 
 import java.util.Map;
 

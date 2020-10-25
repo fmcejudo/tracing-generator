@@ -1,19 +1,21 @@
 package com.github.fmcejudo.tracing.generator.component;
 
-import zipkin2.Span;
+import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HttpComponent implements Component {
+public class HttpComponent implements Component, DurationDelayer {
 
-    private final String serviceName;
     private static final List<String> OPERATION_METHODS = List.of("get", "post", "put", "delete", "patch");
 
+    private final String serviceName;
+    private DurationDelayer durationDelayer;
 
     public HttpComponent(final String serviceName) {
         this.serviceName = serviceName;
+        this.durationDelayer = duration -> 0;
     }
 
     @Override
@@ -41,7 +43,7 @@ public class HttpComponent implements Component {
 
     @Override
     public Map<String, String> getClientTags(final Component childComponent, final String operationName) {
-        Map<String, String> tags = new HashMap<>(this.getServerTags(operationName));
+        Map<String, String> tags = new HashMap<>(childComponent.getServerTags(operationName));
         return Map.copyOf(tags);
     }
 
@@ -53,5 +55,15 @@ public class HttpComponent implements Component {
     @Override
     public String getServiceName() {
         return serviceName;
+    }
+
+    @Override
+    public void configureExtraDurationFn(final DurationDelayer durationDelayer) {
+        this.durationDelayer = durationDelayer;
+    }
+
+    @Override
+    public long getExtraDuration(long duration) {
+        return durationDelayer.getExtraDuration(duration);
     }
 }

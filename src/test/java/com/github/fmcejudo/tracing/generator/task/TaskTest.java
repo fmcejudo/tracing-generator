@@ -1,9 +1,15 @@
 package com.github.fmcejudo.tracing.generator.task;
 
 import com.github.fmcejudo.tracing.generator.assertions.OperationAssertions;
+import com.github.fmcejudo.tracing.generator.component.Component;
 import com.github.fmcejudo.tracing.generator.component.HttpComponent;
 import com.github.fmcejudo.tracing.generator.component.JdbcComponent;
+import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
+import com.github.fmcejudo.tracing.generator.issues.SimpleDurationDelayer;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 class TaskTest {
 
@@ -42,6 +48,67 @@ class TaskTest {
         OperationAssertions.assertThat(tokenValidationTask)
                 .componentInstanceOf(HttpComponent.class)
                 .doesNotDependsOnAny();
+
+    }
+
+    @Test
+    void shouldCreateTaskWithADurationDelayableComponent() {
+        //Given
+        CustomDelayableComponent customDelayableComponent = new CustomDelayableComponent() {{
+            configureExtraDurationFn(new SimpleDurationDelayer()
+                    .setPercentageOfRequests(100)
+                    .incrementDurationFn(t -> 2 * t)
+            );
+        }};
+        final long taskDuration = 5_000;
+        Task task = new Task(customDelayableComponent, "get /operation").duration(taskDuration);
+
+        //When
+        long duration = task.getDuration();
+
+        //Then
+        Assertions.assertThat(duration).isEqualTo(taskDuration + 2 * taskDuration);
+    }
+
+
+    static class CustomDelayableComponent implements Component, DurationDelayer {
+
+        private DurationDelayer durationDelayer = new SimpleDurationDelayer().incrementDurationFn(t -> t);
+
+        @Override
+        public boolean hasKind() {
+            return false;
+        }
+
+        @Override
+        public Map<String, String> getServerTags(String operationName) {
+            return null;
+        }
+
+        @Override
+        public Map<String, String> getClientTags(Component childComponent, String operation) {
+            return null;
+        }
+
+        @Override
+        public String getLocalComponent() {
+            return null;
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
+        }
+
+        @Override
+        public void configureExtraDurationFn(DurationDelayer durationDelayer) {
+            this.durationDelayer = durationDelayer;
+        }
+
+        @Override
+        public long getExtraDuration(long duration) {
+            return durationDelayer.getExtraDuration(duration);
+        }
 
     }
 
