@@ -7,7 +7,6 @@ import com.github.fmcejudo.tracing.generator.task.Task;
 import com.github.fmcejudo.tracing.generator.util.TestTraceExporter;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 

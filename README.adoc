@@ -23,4 +23,50 @@ In here the scenarios are mocking. It contains a clock which fits with the need 
 We might say this is useful when you want tasks generating their footprints,
 without having those running anywhere and taking over how fast they are invoked and how often they introduce an error.
 
-== HOW TO USE IT?
+== SOME CONCEPTS TO BUILD SCENARIOS
+
+The main concepts in here are:
+
+- Components: As the deployed artifacts in servers which are atending requests.
+- Tasks: As operation in a server, which might contain subtasks to complete their work.
+- Exporter: to define the place the resulted trace goes to.
+
+Also it is important to mention that the standard is follow at the moment is just Opentracing, but it is mind to include soon Opentelemetry as a promising standard
+which might cope good number of vendors.
+
+=== COMPONENTS
+
+Components are pieces in the environment, which might attend to a number of tasks. These components can be defined to introduce some issues, like increasing duration
+randomly or introduce errors in spans, creating so more real scenarios.
+
+Components so far are two:
+
+- HttpComponent: Base on brave this component made of a span kind CLIENT in local and span kind SERVER in the remote to link together doing so the connection.
+The spans contains when they started and the duration of that span, which ends up in knowing the duration and latencies of component and connection line.
+
+- JdbComponent: They are component simulating relational database instrumentation, what actually does not put anything in the span list. It just completes information
+in CLIENT spans to show up the piece is there.
+
+
+=== TASK
+
+Task are operations in the component, which might need from other subtasks to complete a full work. Tasks can configure their duration and on top of that we can introduce issues
+to alter the happy behaviour.
+
+
+=== EXPORTERS
+
+Exporters are the sinks to which the resulted spans are delivered.
+
+- CounterExporter: This exporter shows in the console, when JVM ends, the number of spans which the application has generated, just in case this number should match with the number
+you received in your tool.
+
+- ZipkinExporter: To drain the spans to zipkin so as to be represented in one well known system.
+
+- LogExporter: Shows the generated traces in the given input stream channel.
+
+- SocketExporter: pushing the spans to a server socket
+
+- KafkaExporter: In development. This should push the spans to the message queue.
+
+
