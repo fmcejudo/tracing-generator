@@ -1,6 +1,7 @@
 package com.github.fmcejudo.tracing.generator.component;
 
 import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
+import com.github.fmcejudo.tracing.generator.issues.HttpErrorIssuer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,10 +13,12 @@ public class HttpComponent implements Component, DurationDelayer {
 
     private final String serviceName;
     private DurationDelayer durationDelayer;
+    private HttpErrorIssuer httpErrorIssuer;
 
     public HttpComponent(final String serviceName) {
         this.serviceName = serviceName;
         this.durationDelayer = duration -> 0;
+        httpErrorIssuer = HttpErrorIssuer.with(0, 0);
     }
 
     @Override
@@ -38,6 +41,11 @@ public class HttpComponent implements Component, DurationDelayer {
             tags.put("http.path", operationChunks[1]);
             tags.put("http.url", "http://" + getServiceName() + "/" + operationChunks[1]);
         }
+
+        httpErrorIssuer.randomIssuer()
+                .map(HttpErrorIssuer.ErrorIssuer::getErrorTags)
+                .ifPresent(tags::putAll);
+
         return Map.copyOf(tags);
     }
 
@@ -65,5 +73,23 @@ public class HttpComponent implements Component, DurationDelayer {
     @Override
     public long getExtraDuration(long duration) {
         return durationDelayer.getExtraDuration(duration);
+    }
+
+    public HttpComponent withFailurePercentage(final int failurePercentage) {
+        this.httpErrorIssuer = HttpErrorIssuer.with(failurePercentage, httpErrorIssuer.warningPercentage());
+        return this;
+    }
+
+    public HttpComponent withWarningPercentage(final int warningPercentage) {
+        this.httpErrorIssuer = HttpErrorIssuer.with(httpErrorIssuer.failurePercentage(), warningPercentage);
+        return this;
+    }
+
+    public int getFailurePercentage() {
+        return httpErrorIssuer.failurePercentage();
+    }
+
+    public int getWarningPercentage() {
+        return httpErrorIssuer.warningPercentage();
     }
 }

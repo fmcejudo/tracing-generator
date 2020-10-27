@@ -1,7 +1,5 @@
 package com.github.fmcejudo.tracing.generator.component;
 
-import com.github.fmcejudo.tracing.generator.issues.DurationDelayer;
-
 import java.util.Map;
 
 public interface Component {

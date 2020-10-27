@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import zipkin2.Span;
 
 import java.util.ArrayList;
 import java.util.List;

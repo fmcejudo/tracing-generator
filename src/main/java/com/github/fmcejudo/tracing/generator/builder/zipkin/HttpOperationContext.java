@@ -78,6 +78,11 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
         return span.isPresent();
     }
 
+    @Override
+    public boolean hasError() {
+        return serverSpanContext.getTags().containsKey("error");
+    }
+
     public long duration() {
         return (serverSpanContext.getResponseTime() - serverSpanContext.getReceiveTime()) / 1_000;
     }

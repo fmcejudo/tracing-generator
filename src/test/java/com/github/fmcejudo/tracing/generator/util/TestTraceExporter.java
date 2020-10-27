@@ -45,8 +45,9 @@ public class TestTraceExporter implements Exporter {
         }
 
         public TraceAssert spansSize(int size) {
-            if (this.actual.size() != size) {
-                failWithMessage("Expected %d traces, but found %d", size, this.actual.size());
+            long spanSize = this.actual.stream().mapToLong(Collection::size).sum();
+            if (spanSize != size){
+                failWithMessage("Expected %d traces, but found %d", size, spanSize);
             }
             return this;
         }
@@ -85,5 +86,7 @@ public class TestTraceExporter implements Exporter {
 
             return this;
         }
+
+
     }
 }

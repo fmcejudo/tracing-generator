@@ -14,4 +14,6 @@ public interface OperationContext {
 
     boolean updateClientWithSpanId(long responseTime, String parentId);
 
+    boolean hasError();
+
 }

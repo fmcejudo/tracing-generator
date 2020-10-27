@@ -47,6 +47,11 @@ public class JdbcOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    public boolean hasError() {
+        return false;
+    }
+
+    @Override
     public void updateServerResponse(long endTime) {
     }
 

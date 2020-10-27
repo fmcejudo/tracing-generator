@@ -50,6 +50,12 @@ public class TraceBuilder {
 
         OperationContext operationContext = ZipkinContextFactory.createOperationCtx(task, zipkinContext);
 
+        if (operationContext.hasError()) {
+            spanClock.advanceClockByMicroseconds(task.getDuration());
+            operationContext.updateServerResponse(spanClock.getCurrentTimeInMicroseconds());
+            exportTrace(operationContext);
+            return operationContext;
+        }
         spanClock.advanceClockByMillis(LATENCY_MS);
 
         if (task.getChildTasks().size() != 0) {

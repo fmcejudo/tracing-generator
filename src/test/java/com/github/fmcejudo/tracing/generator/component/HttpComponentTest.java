@@ -1,6 +1,6 @@
 package com.github.fmcejudo.tracing.generator.component;
 
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +51,18 @@ class HttpComponentTest {
 
         //Then
         assertThat(clientTags).containsEntry("sql.query", "select * from table");
+    }
+
+    @Test
+    void shouldConfigureComponentWithHttpFailures() {
+        //Given
+        HttpComponent httpComponent = new HttpComponent("custom-service")
+                .withFailurePercentage(5)
+                .withWarningPercentage(8);
+
+        //When && Then
+        Assertions.assertThat(httpComponent.getFailurePercentage()).isEqualTo(5);
+        Assertions.assertThat(httpComponent.getWarningPercentage()).isEqualTo(8);
     }
 
 }
