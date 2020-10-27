@@ -2,43 +2,25 @@
 
 == OVERVIEW
 
-Working with spans generated through applications or building tracing examples might be tedious and evolving.
-The aim of this project is to create those spans which go through different operations in a train of microservices quickly and exporting them to different collectors.
+Spans are the footprints to find the path that requests have followed to get their work done.
+These spans contain useful information to detect problems in components or detect problems in connections. But also it might discover new components in the playground as many other detections which might come to your head.
+
+The aim of this project is to create those spans which go through different operations in a train of microservices,
+quickly and exporting them to different sinks, so to make a test scenario in which you find confident to get your results.
 
 == WHEN IS IT USEFUL?
 
-Working in observability and dealing with spans, which might well be creating collectors for different providers or different standards.
+Working in observability and dealing with spans, this help to have a dataset which is constant and might help in your development process.
 
-Up to know the way you might consume spans might be pushing files to channel as kafka or via REST to be consumed by the other end, with tracers or well actually monitoring applications and those generating spans.
+Also it helps to generate spans consume by collectors or redirected to message queues like `kafka` to be consumed by some custom application or tool, testing so their capabilities.
 
-Having also an exporter which counts the number of generated spans, which might be useful to get expected results.
+Up to now we have injected limited number of files into `kafka` producers or REST apis to have the content in the other end;
+or we have created a number of instrumented sample applications which produce those spans;
+or using `tracers` which generate spans base in their API building.
+
+In here the scenarios are mocking. It contains a clock which fits with the need to move accordingly. Which let us generate a big number of spans and try to test loads of spans.
+
+We might say this is useful when you want tasks generating their footprints,
+without having those running anywhere and taking over how fast they are invoked and how often they introduce an error.
 
 == HOW TO USE IT?
-
-Defining operations and nesting them, giving those tags which are customised.
-
-[source,java]
-----
-Operation.from(Microservice.builder()
-                        .environment("des")
-                        .tenant("za")
-                        .domain("purchase")
-                        .service("pchs")
-                        .jirakey("b1")
-                        .slot("default")
-                        .platform("Openshift-Meccano Arteixo")
-                        .build(),
-                "get /b1/list",
-                "service B1"
-        );
-----
-
-Adding task to executor, exposing results through defined exporters.
-
-[source,java]
-----
-  TraceGenerator.create(<exporter list>)
-                .withThreads(2)
-                .addOperation(<operation1>)
-                .addOperation(<operation2>);
-----
