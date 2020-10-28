@@ -2,15 +2,16 @@
 
 == OVERVIEW
 
-Spans are the footprints to find the path that requests have followed to get their work done.
-These spans contain useful information to detect problems in components or detect problems in connections. But also it might discover new components in the playground as many other detections which might come to your head.
+Spans are the footprints to find the path that requests have to follow to get their work done.
+These spans contain useful information to detect problems in components or detect problems in connections, as well as it might discover
+new components in the playground as many other detections which might come to your head.
 
 The aim of this project is to create those spans which go through different operations in a train of microservices,
 quickly and exporting them to different sinks, so to make a test scenario in which you find confident to get your results.
 
 == WHEN IS IT USEFUL?
 
-Working in observability and dealing with spans, this help to have a dataset which is constant and might help in your development process.
+Working in observability and dealing with spans, this help to have a dataset which is tailored and might help in your development process.
 
 Also it helps to generate spans consume by collectors or redirected to message queues like `kafka` to be consumed by some custom application or tool, testing so their capabilities.
 
@@ -31,7 +32,7 @@ The main concepts in here are:
 - Tasks: As operation in a server, which might contain subtasks to complete their work.
 - Exporter: to define the place the resulted trace goes to.
 
-Also it is important to mention that the standard is follow at the moment is just Opentracing, but it is mind to include soon Opentelemetry as a promising standard
+Also, it is important to mention that the standard is follow at the moment is just Opentracing, but it is mind to include soon Opentelemetry as a promising standard
 which might cope good number of vendors.
 
 === COMPONENTS
@@ -42,11 +43,10 @@ randomly or introduce errors in spans, creating so more real scenarios.
 Components so far are two:
 
 - HttpComponent: Base on brave this component made of a span kind CLIENT in local and span kind SERVER in the remote to link together doing so the connection.
-The spans contains when they started and the duration of that span, which ends up in knowing the duration and latencies of component and connection line.
+The spans contain when they started and the duration of that span, which ends up in knowing the duration and latencies of component and connection line.
 
 - JdbComponent: They are component simulating relational database instrumentation, what actually does not put anything in the span list. It just completes information
 in CLIENT spans to show up the piece is there.
-
 
 === TASK
 
@@ -68,5 +68,62 @@ you received in your tool.
 - SocketExporter: pushing the spans to a server socket
 
 - KafkaExporter: In development. This should push the spans to the message queue.
+
+
+== HOW TO USE IT
+
+What better than an example to see how to build this scenarios and their results:
+
+We are going to build a common authentication task in which a user connect to a microgateway to reach a target service,
+and the operation will perform an authentication with the user credentials in a database:
+
+So first at all we are going to define those components which will trigger some issues in the tasks:
+
+MICROGATEWAY:
+
+[source, java]
+----
+ HttpComponent migrogatewayComponent = new HttpComponent("microgateway");
+ migrogatewayComponent.configureExtraDurationFn(
+         simpleDurationDelayer.setPercentageOfRequests(5).incrementDurationFn(l -> 1_000_000L)
+ );
+----
+
+In the above component we have called the service name `microgateway` and 5 pencent of request will increment their duration by 1 seconds or effectively 1_000_000 microsenconds.
+
+TARGET SERVICE:
+
+[source, java]
+----
+HttpComponent customServiceComponent = new HttpComponent("my-service")
+        .withFailurePercentage(10)
+        .withWarningPercentage(10);
+----
+
+In the target service with service name `microservice` we will get 10 percent of request with error and 10 percent with `http.status_code` tag.
+
+DATABASE:
+
+[source, java]
+----
+JdbcComponent customServiceDatabase = new JdbcComponent("my-db");
+----
+
+Our database as storage.
+
+
+Next we will create tasks in those components and we will chain them to get the dependencies with the  coming call in the stack.
+
+In microgateway we are going to set an operation like `/microgwt/myservice/authentication` which needs from `my-service` at the operation `/authentication`. And this operation
+at `my-service` will select user credentials from `my-db` database to validate the user.
+
+[source, java]
+----
+Task proxyAuthenticationTask = Task.from(microgatewayComponent, "get /microgwt/myservice/authentication");
+Task authenticationAtServiceTask = proxyAuthenticationTask.needsFrom(customServiceComponent, "get /authentication");
+
+authenticationAtServiceTask.needsFrom(customServiceDatabase, "select * from user");
+----
+
 
 
