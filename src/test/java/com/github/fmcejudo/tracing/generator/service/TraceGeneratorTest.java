@@ -33,7 +33,7 @@ class TraceGeneratorTest {
         Task task = Task.from(new HttpComponent("service A"), "get /a");
         TraceGenerator.create(List.of(exporter))
                 .withThreads(1)
-                .addOperation(task, 1_000);
+                .addTask(task, 1_000);
 
         //When
         TimeUnit.SECONDS.sleep(2);

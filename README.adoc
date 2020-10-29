@@ -83,8 +83,8 @@ MICROGATEWAY:
 
 [source, java]
 ----
- HttpComponent migrogatewayComponent = new HttpComponent("microgateway");
- migrogatewayComponent.configureExtraDurationFn(
+ HttpComponent microgatewayComponent = new HttpComponent("microgateway");
+ microgatewayComponent.configureExtraDurationFn(
          simpleDurationDelayer.setPercentageOfRequests(5).incrementDurationFn(l -> 1_000_000L)
  );
 ----
@@ -114,7 +114,7 @@ Our database as storage.
 
 Next we will create tasks in those components and we will chain them to get the dependencies with the  coming call in the stack.
 
-In microgateway we are going to set an operation like `/microgwt/myservice/authentication` which needs from `my-service` at the operation `/authentication`. And this operation
+In microgateway we are going to define an operation like `/microgwt/myservice/authentication` which needs from `my-service` at the operation `/authentication`. And this operation
 at `my-service` will select user credentials from `my-db` database to validate the user.
 
 [source, java]
@@ -125,5 +125,45 @@ Task authenticationAtServiceTask = proxyAuthenticationTask.needsFrom(customServi
 authenticationAtServiceTask.needsFrom(customServiceDatabase, "select * from user");
 ----
 
+Now it is time for exporters to which we deliver the spans.
+
+We can create those exporters as:
+
+[source, java]
+----
+Exporter loggingExporter = new LoggingExporter(outputStream);
+Exporter zipkinExporter = new ZipkinExporter("http://localhost:9411");
+Exporter socketExporter = new SocketExporter(9999);
+Exporter counterExporter = new CounterExporter();
+----
+
+Bear in mind `counterExporter` is counting the generated spans in the current execution, and it will show the number of generated traces and the time the execution took.
 
 
+Finally, we want to export those generated spans for our defined scenario into any output stream, simulating the call frequency of a given endpoint.
+
+[source, java]
+----
+TraceGenerator.create(List.of(loggingExporter, zipkinExporter, socketExporter, counterExporter))
+                .withThreads(2)
+                .addTask(proxyAuthenticationTask, 1_000);
+----
+
+With `TraceGenerator` we are telling the number of threads our application uses to create spans
+and for the added task we set the frequency to request that endpoint.
+
+== RESULTS
+
+With the example above in place, we have generated some spans which have been exported to Zipkin, with the next results:
+
+A list of tasks:
+
+image::images/taskList.png[]
+
+A task without error
+
+image::images/taskWithoutError.png[]
+
+And a task with error and the task tags with error key
+
+image::images/taskWithError.png[]

@@ -38,7 +38,7 @@ public class TraceGenerator implements Closeable {
         return new TraceGenerator(this.exporterList, threads);
     }
 
-    public TraceGenerator addOperation(final Task task, final long intervalMs) {
+    public TraceGenerator addTask(final Task task, final long intervalMs) {
         executorService.submit(() -> {
             while (!isClosed.get()) {
                 TraceBuilder.newTrace(task, exporterList.toArray(Exporter[]::new)).build();
