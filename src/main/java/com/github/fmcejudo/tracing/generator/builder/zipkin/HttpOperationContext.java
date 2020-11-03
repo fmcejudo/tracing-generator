@@ -1,6 +1,7 @@
 package com.github.fmcejudo.tracing.generator.builder.zipkin;
 
 import com.github.fmcejudo.tracing.generator.builder.OperationContext;
+import com.github.fmcejudo.tracing.generator.builder.SpanClock;
 import com.github.fmcejudo.tracing.generator.task.Task;
 import zipkin2.Span;
 
@@ -19,12 +20,14 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     private final String traceId;
     private final Task task;
 
-    HttpOperationContext(final Task task, final ZipkinContext zipkinContext) {
+    HttpOperationContext(final Task task, final SpanClock spanClock, final ZipkinContext zipkinContext) {
+        super(spanClock);
+
         this.traceId = zipkinContext.getTraceId();
         this.task = task;
         this.serverSpanContext = SpanContext.builder()
                 .parentId(zipkinContext.getParentId())
-                .receiveTime(zipkinContext.getStartTime())
+                .receiveTime(getCurrentTimeInMicroseconds())
                 .kind(Span.Kind.SERVER)
                 .traceId(traceId)
                 .name(task.getName())
@@ -33,15 +36,15 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
                 .spanId(zipkinContext.getSpanId()).build();
     }
 
-    static HttpOperationContext create(final Task task, final ZipkinContext zipkinContext) {
-        return new HttpOperationContext(task, zipkinContext);
+    static HttpOperationContext create(final Task task, final SpanClock spanClock, final ZipkinContext zipkinContext) {
+        return new HttpOperationContext(task, spanClock, zipkinContext);
     }
 
     @Override
-    public String addClient(final Task childrenTask, final long startTime) {
+    public String addClientForTask(final Task childrenTask) {
 
         SpanContext spanClientContext = SpanContext.builder()
-                .receiveTime(startTime)
+                .receiveTime(getCurrentTimeInMicroseconds())
                 .traceId(this.traceId)
                 .spanId(generateId(64))
                 .name(clientSpanName(childrenTask.getName()))
@@ -67,15 +70,15 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     }
 
     @Override
-    public void updateServerResponse(final long endTime) {
-        serverSpanContext.setResponseTime(endTime);
+    public void closeOperation() {
+        serverSpanContext.setResponseTime(getCurrentTimeInMicroseconds());
     }
 
     @Override
-    public boolean updateClientWithSpanId(final long responseTime, final String parentId) {
+    public boolean closeClientWithId(final String spanId) {
         Optional<SpanContext> span =
-                clientSpanContextList.stream().filter(s -> s.getSpanId().equals(parentId)).findFirst();
-        span.ifPresent(s -> s.setResponseTime(responseTime));
+                clientSpanContextList.stream().filter(s -> s.getSpanId().equals(spanId)).findFirst();
+        span.ifPresent(s -> s.setResponseTime(getCurrentTimeInMicroseconds()));
         return span.isPresent();
     }
 
@@ -85,7 +88,7 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     }
 
     @Override
-    public long duration() {
+    public long operationDuration() {
         return (serverSpanContext.getResponseTime() - serverSpanContext.getReceiveTime()) / 1_000;
     }
 
@@ -96,6 +99,6 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
 
     @Override
     public Map<String, String> getRemoteServerTags() {
-        return null;
+        return serverSpanContext.getTags();
     }
 }

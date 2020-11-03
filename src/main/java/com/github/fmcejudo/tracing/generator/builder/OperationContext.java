@@ -6,15 +6,15 @@ import java.util.Map;
 
 public interface OperationContext {
 
-    String addClient(Task task, long startTime);
+    String addClientForTask(Task task);
 
-    void updateServerResponse(long endTime);
+    boolean closeClientWithId(String parentId);
 
-    boolean updateClientWithSpanId(long responseTime, String parentId);
+    void closeOperation();
 
     byte[] message();
 
-    long duration();
+    long operationDuration();
 
     boolean hasError();
 

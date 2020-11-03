@@ -18,7 +18,7 @@ public class TraceBuilder {
     private static final long LATENCY_MS = 5;
     private final String traceId;
 
-    private final SpanClock spanClock;
+    private final SimpleSpanClock simpleSpanClock;
 
     private final List<Exporter> exporterList;
 
@@ -27,7 +27,7 @@ public class TraceBuilder {
     private TraceBuilder(final Task rootTask, final Exporter... exporters) {
         this.rootTask = rootTask;
         traceId = generateId(128);
-        spanClock = new SpanClock();
+        simpleSpanClock = new SimpleSpanClock();
         exporterList = List.of(exporters);
     }
 
@@ -45,41 +45,41 @@ public class TraceBuilder {
                 .parentId(parentId)
                 .spanId(generateId(64))
                 .traceId(traceId)
-                .startTime(spanClock.getCurrentTimeInMicroseconds())
                 .build();
 
-        OperationContext operationContext = ZipkinContextFactory.createOperationCtx(task, zipkinContext);
+        OperationContext operationContext =
+                ZipkinContextFactory.createOperationCtx(task, simpleSpanClock, zipkinContext);
 
         if (operationContext.hasError()) {
-            spanClock.advanceClockByMicroseconds(task.getDuration());
-            operationContext.updateServerResponse(spanClock.getCurrentTimeInMicroseconds());
+            simpleSpanClock.advanceClockByMicroseconds(task.getDuration());
+            operationContext.closeOperation();
             exportTrace(operationContext);
             return operationContext;
         }
-        spanClock.advanceClockByMillis(LATENCY_MS);
+        simpleSpanClock.advanceClockByMillis(LATENCY_MS);
 
         if (task.getChildTasks().size() != 0) {
             Iterator<Task> taskIterator = task.getChildTasks().iterator();
             while (taskIterator.hasNext()) {
-                spanClock.advanceClockByMillis(LATENCY_MS);
+                simpleSpanClock.advanceClockByMillis(LATENCY_MS);
                 Task childrenTask = taskIterator.next();
                 String clientSpanId =
-                        operationContext.addClient(childrenTask, spanClock.getCurrentTimeInMicroseconds());
-                spanClock.advanceClockByMillis(LATENCY_MS);
+                        operationContext.addClientForTask(childrenTask);
+                simpleSpanClock.advanceClockByMillis(LATENCY_MS);
                 OperationContext childrenOperation = build(childrenTask, clientSpanId);
 
-                spanClock
+                simpleSpanClock
                         .advanceClockByMillis(LATENCY_MS)
-                        .advanceClockByMicroseconds(childrenOperation.duration());
+                        .advanceClockByMicroseconds(childrenOperation.operationDuration());
 
-                operationContext.updateClientWithSpanId(spanClock.getCurrentTimeInMicroseconds(), clientSpanId);
+                operationContext.closeClientWithId(clientSpanId);
             }
         }
-        spanClock
+        simpleSpanClock
                 .advanceClockByMillis(LATENCY_MS)
                 .advanceClockByMicroseconds(task.getDuration());
 
-        operationContext.updateServerResponse(spanClock.getCurrentTimeInMicroseconds());
+        operationContext.closeOperation();
         exportTrace(operationContext);
         return operationContext;
     }
@@ -88,15 +88,16 @@ public class TraceBuilder {
         exporterList.forEach(e -> e.write(operationContext.message()));
     }
 
-    private static class SpanClock {
+    private static class SimpleSpanClock implements SpanClock {
+
         private long currentTime = System.currentTimeMillis();
 
-        public SpanClock advanceClockByMillis(long milliseconds) {
+        SimpleSpanClock advanceClockByMillis(long milliseconds) {
             currentTime += milliseconds;
             return this;
         }
 
-        public SpanClock advanceClockByMicroseconds(long microseconds) {
+        SimpleSpanClock advanceClockByMicroseconds(long microseconds) {
             advanceClockByMillis(MILLISECONDS.convert(microseconds, MICROSECONDS));
             return this;
         }
@@ -105,4 +106,6 @@ public class TraceBuilder {
             return MICROSECONDS.convert(currentTime, MILLISECONDS);
         }
     }
+
 }
+

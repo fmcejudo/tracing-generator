@@ -9,16 +9,14 @@ class ZipkinContextTest {
     @Test
     void shouldBuildAZipkinContext() {
         //Given
-        long startTime = System.currentTimeMillis();
         String traceId = IdGenerator.generateId(128);
         //  When
         ZipkinContext zipkinContext = ZipkinContext.builder()
                 .traceId(traceId)
-                .startTime(startTime)
                 .build();
         //Then
-        Assertions.assertThat(zipkinContext).extracting("traceId", "parentId", "spanId", "startTime")
-                .containsExactly(traceId, null, null, startTime);
+        Assertions.assertThat(zipkinContext).extracting("traceId", "parentId", "spanId")
+                .containsExactly(traceId, null, null);
     }
 
 
@@ -26,17 +24,8 @@ class ZipkinContextTest {
     void shouldNotBuildAZipkinContextAsTraceId() {
         //Given && When && Then
         Assertions.assertThatThrownBy(() ->
-                ZipkinContext.builder().startTime(System.currentTimeMillis()).build()
+                ZipkinContext.builder().build()
         ).isInstanceOf(NullPointerException.class).hasMessageContaining("traceId is marked non-null but is null");
     }
-
-    @Test
-    void shouldNotBuildAZipkinContextAsStartTime() {
-        //Given && When && Then
-        Assertions.assertThatThrownBy(() ->
-                ZipkinContext.builder().traceId(IdGenerator.generateId(128)).build()
-        ).isInstanceOf(NullPointerException.class).hasMessageContaining("startTime is marked non-null but is null");
-    }
-
 
 }

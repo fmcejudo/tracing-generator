@@ -12,7 +12,5 @@ public class ZipkinContext {
     private final String traceId;
     private final String parentId;
     private final String spanId;
-    @NonNull
-    private final Long startTime;
 
 }

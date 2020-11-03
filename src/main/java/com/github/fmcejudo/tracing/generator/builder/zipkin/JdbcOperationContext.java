@@ -1,17 +1,13 @@
 package com.github.fmcejudo.tracing.generator.builder.zipkin;
 
 import com.github.fmcejudo.tracing.generator.builder.OperationContext;
+import com.github.fmcejudo.tracing.generator.builder.SpanClock;
 import com.github.fmcejudo.tracing.generator.task.Task;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import zipkin2.Span;
 
 import java.util.List;
 import java.util.Map;
 
-@Builder(access = AccessLevel.PRIVATE)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JdbcOperationContext extends AbstractOperationContext {
 
     private final String serviceName;
@@ -20,16 +16,19 @@ public class JdbcOperationContext extends AbstractOperationContext {
 
     private final long duration;
 
-    public static OperationContext create(final Task task) {
-        return JdbcOperationContext.builder()
-                .serviceName(task.getName())
-                .databaseTags(task.getServerTags())
-                .duration(task.getDuration())
-                .build();
+    private JdbcOperationContext(final Task task, final SpanClock spanClock) {
+        super(spanClock);
+        this.serviceName = task.serviceName();
+        this.databaseTags = task.getServerTags();
+        this.duration = task.getDuration();
+    }
+
+    public static OperationContext create(final Task task, final SpanClock spanClock) {
+        return new JdbcOperationContext(task, spanClock);
     }
 
     @Override
-    public String addClient(final Task task, final long startTime) {
+    public String addClientForTask(final Task task) {
         throw new RuntimeException("Not Supported Operation");
     }
 
@@ -39,7 +38,7 @@ public class JdbcOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    public boolean updateClientWithSpanId(long responseTime, String parentId) {
+    public boolean closeClientWithId(String spanId) {
         throw new RuntimeException("Not Supported Operation");
     }
 
@@ -59,11 +58,10 @@ public class JdbcOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    public void updateServerResponse(long endTime) {
+    public void closeOperation() {
     }
 
-    public long duration() {
+    public long operationDuration() {
         return duration;
     }
-
 }
