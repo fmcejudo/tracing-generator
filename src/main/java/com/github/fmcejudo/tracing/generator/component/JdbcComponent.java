@@ -40,7 +40,7 @@ public class JdbcComponent implements Component, DurationDelayer {
 
     @Override
     public String getServiceName() {
-        return serviceName;
+        return null;
     }
 
     @Override
@@ -53,4 +53,8 @@ public class JdbcComponent implements Component, DurationDelayer {
         return durationDelayer.getExtraDuration(duration);
     }
 
+    @Override
+    public String getRemoteServiceName() {
+        return serviceName;
+    }
 }

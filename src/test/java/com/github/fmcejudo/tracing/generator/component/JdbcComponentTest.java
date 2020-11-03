@@ -19,7 +19,10 @@ class JdbcComponentTest {
     @Test
     void shouldValidateAJdbcComponent() {
         //Given && When && Then
-        assertThat(jdbcComponent).extracting("serviceName", "localComponent").containsExactly("database", "jdbc");
+        assertThat(jdbcComponent).extracting("serviceName", "localComponent")
+                .containsExactly(null, "jdbc");
+
+        assertThat(jdbcComponent.getRemoteServiceName()).isEqualTo("database");
     }
 
     @Test

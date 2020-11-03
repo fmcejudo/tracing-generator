@@ -122,7 +122,7 @@ class TraceBuilderTest {
         catalogTask.needsFrom(userComponent, "get /user/list");
 
         //When
-        TraceBuilder.newTrace(requestOrdersTask, testTraceExporter, zipkinExporter).build();
+        TraceBuilder.newTrace(requestOrdersTask, testTraceExporter).build();
 
         //Then
         List<Span> spans = testTraceExporter.flatMapSpan();

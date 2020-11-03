@@ -14,4 +14,8 @@ public interface Component {
 
     String getServiceName();
 
+    default String getRemoteServiceName(){
+        return null;
+    }
+
 }

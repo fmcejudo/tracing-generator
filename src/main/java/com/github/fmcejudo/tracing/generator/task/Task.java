@@ -39,6 +39,10 @@ public class Task {
         return Optional.ofNullable(component.getServiceName()).map(String::toLowerCase).orElse("");
     }
 
+    public String remoteServiceName() {
+        return component.getRemoteServiceName();
+    }
+
     public Task needsFrom(final Component service, String operationName) {
         Task childTask = Task.from(service, operationName);
         childTasks.add(childTask);

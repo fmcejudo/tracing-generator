@@ -43,7 +43,7 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     @Override
     public String addClientForTask(final Task childrenTask) {
 
-        SpanContext spanClientContext = SpanContext.builder()
+        SpanContext.SpanContextBuilder contextBuilder = SpanContext.builder()
                 .receiveTime(getCurrentTimeInMicroseconds())
                 .traceId(this.traceId)
                 .spanId(generateId(64))
@@ -51,8 +51,11 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
                 .kind(Span.Kind.CLIENT)
                 .tags(task.getClientTags(childrenTask))
                 .parentId(this.serverSpanContext.getSpanId())
-                .serviceName(task.serviceName())
-                .build();
+                .serviceName(task.serviceName());
+
+        Optional.ofNullable(childrenTask.remoteServiceName()).ifPresent(contextBuilder::remoteServiceName);
+
+        SpanContext spanClientContext = contextBuilder.build();
 
         clientSpanContextList.add(spanClientContext);
         return spanClientContext.getSpanId();
@@ -90,11 +93,6 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
     @Override
     public long operationDuration() {
         return (serverSpanContext.getResponseTime() - serverSpanContext.getReceiveTime()) / 1_000;
-    }
-
-    @Override
-    public String getRemoteServerName() {
-        return null;
     }
 
     @Override

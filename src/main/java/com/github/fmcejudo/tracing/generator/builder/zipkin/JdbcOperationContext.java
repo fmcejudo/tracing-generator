@@ -48,11 +48,6 @@ public class JdbcOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    public String getRemoteServerName() {
-        return serviceName;
-    }
-
-    @Override
     public Map<String, String> getRemoteServerTags() {
         return databaseTags;
     }

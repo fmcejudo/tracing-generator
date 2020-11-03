@@ -18,8 +18,5 @@ public interface OperationContext {
 
     boolean hasError();
 
-    String getRemoteServerName();
-
     Map<String, String> getRemoteServerTags();
-
 }
