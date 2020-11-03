@@ -4,46 +4,43 @@ import com.github.fmcejudo.tracing.generator.builder.OperationContext;
 import com.github.fmcejudo.tracing.generator.task.Task;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import zipkin2.Endpoint;
+import lombok.Builder;
 import zipkin2.Span;
 
 import java.util.List;
+import java.util.Map;
 
+@Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JdbcOperationContext extends AbstractOperationContext {
 
-    private final Span.Builder clientSpanBuilder;
+    private final String serviceName;
 
-    public static OperationContext create(final Task task, final ZipkinContext zipkinContext) {
-        Span.Builder spanBuilder = Span.newBuilder()
-                .parentId(zipkinContext.getParentId())
-                .id(zipkinContext.getSpanId())
-                .traceId(zipkinContext.getTraceId())
-                .name(task.getName())
-                .kind(Span.Kind.CLIENT)
-                .localEndpoint(Endpoint.newBuilder().serviceName(task.serviceName()).build())
-                .timestamp(zipkinContext.getStartTime())
-                .duration(task.getDuration());
+    private final Map<String, String> databaseTags;
 
-        task.getServerTags().forEach(spanBuilder::putTag);
+    private final long duration;
 
-        return new JdbcOperationContext(spanBuilder);
+    public static OperationContext create(final Task task) {
+        return JdbcOperationContext.builder()
+                .serviceName(task.getName())
+                .databaseTags(task.getServerTags())
+                .duration(task.getDuration())
+                .build();
     }
-
 
     @Override
     public String addClient(final Task task, final long startTime) {
-        throw new RuntimeException("Jdbc operations don't link with other component");
+        throw new RuntimeException("Not Supported Operation");
     }
 
     @Override
     List<Span> generatedSpans() {
-        return List.of(clientSpanBuilder.build());
+        return List.of();
     }
 
     @Override
     public boolean updateClientWithSpanId(long responseTime, String parentId) {
-        throw new RuntimeException("Jdbc operation does not have children");
+        throw new RuntimeException("Not Supported Operation");
     }
 
     @Override
@@ -52,11 +49,21 @@ public class JdbcOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    public String getRemoteServerName() {
+        return serviceName;
+    }
+
+    @Override
+    public Map<String, String> getRemoteServerTags() {
+        return databaseTags;
+    }
+
+    @Override
     public void updateServerResponse(long endTime) {
     }
 
     public long duration() {
-        return clientSpanBuilder.build().durationAsLong();
+        return duration;
     }
 
 }

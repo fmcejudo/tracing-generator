@@ -25,7 +25,7 @@ public final class ZipkinContextFactory {
                     throw new RuntimeException("local component can not be null");
                 }),
                 Case($("http"), HttpOperationContext.create(task, zipkinContext)),
-                Case($("jdbc"), JdbcOperationContext.create(task, zipkinContext)),
+                Case($("jdbc"), JdbcOperationContext.create(task)),
                 Case($(), () -> {
                     throw new RuntimeException("local component does not exist or not implemented yet");
                 }));

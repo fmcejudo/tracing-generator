@@ -46,7 +46,7 @@ class TraceBuilderTest {
         TraceBuilder.newTrace(authenticationTask, testTraceExporter).build();
 
         //Then
-        testTraceExporter.assertThat().spansSize(7).hasSameTraceId().spansHaveTimestamp().spansHaveDuration();
+        testTraceExporter.assertThat().spansSize(6).hasSameTraceId().spansHaveTimestamp().spansHaveDuration();
     }
 
 
@@ -122,7 +122,7 @@ class TraceBuilderTest {
         catalogTask.needsFrom(userComponent, "get /user/list");
 
         //When
-        TraceBuilder.newTrace(requestOrdersTask, testTraceExporter, zipkinExporter).build();
+        TraceBuilder.newTrace(requestOrdersTask, testTraceExporter).build();
 
         //Then
         List<Span> spans = testTraceExporter.flatMapSpan();

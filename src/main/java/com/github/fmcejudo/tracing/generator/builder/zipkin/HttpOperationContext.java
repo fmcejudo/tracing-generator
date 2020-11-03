@@ -6,6 +6,7 @@ import zipkin2.Span;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -83,7 +84,18 @@ final class HttpOperationContext extends AbstractOperationContext implements Ope
         return serverSpanContext.getTags().containsKey("error");
     }
 
+    @Override
     public long duration() {
         return (serverSpanContext.getResponseTime() - serverSpanContext.getReceiveTime()) / 1_000;
+    }
+
+    @Override
+    public String getRemoteServerName() {
+        return null;
+    }
+
+    @Override
+    public Map<String, String> getRemoteServerTags() {
+        return null;
     }
 }
